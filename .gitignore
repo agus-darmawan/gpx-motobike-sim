@@ -1,0 +1,81 @@
+# ========================================
+# Python
+# ========================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.pkl
+*.log
+*.sqlite
+*.db
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# ========================================
+# Flask
+# ========================================
+instance/
+.flaskenv
+*.env
+*.pem
+
+# Upload & output directories
+uploads/
+output/
+generated/
+tmp/
+
+# Plot images / generated files
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+
+# GPX test files (optional)
+*.gpx
+
+# ========================================
+# Jupyter
+# ========================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ========================================
+# macOS
+# ========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ========================================
+# Windows
+# ========================================
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ========================================
+# Linux
+# ========================================
+*~
+
+# ========================================
+# IDE
+# ========================================
+.vscode/
+.idea/
+*.iml
+
+# ========================================
+# Node (if UI included)
+# ========================================
+node_modules/
+dist/
+build/
