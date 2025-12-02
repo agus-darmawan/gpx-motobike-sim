@@ -1,34 +1,255 @@
 <!doctype html>
-<html>
+<html lang="id">
 <head>
   <meta charset="utf-8"/>
-  <title>Simulate Motor Trip (4T) — Upload GPX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Motorcycle Trip Simulator</title>
   <style>
-    body { font-family: system-ui, Arial; max-width:900px; margin:40px auto; }
-    .card { padding:20px; border:1px solid #ddd; border-radius:8px; }
-    input[type=file] { display:block; margin:12px 0; }
-    button { padding:10px 14px; background:#2b8aef; color:white; border:none; border-radius:6px; }
-    small { color:#666; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; padding: 20px;
+    }
+    .container {
+      max-width: 900px; margin: 0 auto; background: white;
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; padding: 30px; text-align: center;
+    }
+    .header h1 { font-size: 28px; margin-bottom: 8px; font-weight: 600; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    .content { padding: 40px; }
+    .form-section { margin-bottom: 32px; }
+    .form-section h3 {
+      color: #667eea; font-size: 18px; margin-bottom: 16px;
+      padding-bottom: 8px; border-bottom: 2px solid #e0e0e0;
+    }
+    .form-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px; margin-bottom: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label {
+      font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px;
+    }
+    .form-group small { font-size: 12px; color: #666; margin-top: 4px; }
+    .form-group input[type="number"],
+    .form-group input[type="file"],
+    .form-group select {
+      padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;
+      font-size: 14px; transition: all 0.3s;
+    }
+    .form-group input[type="number"]:focus,
+    .form-group select:focus {
+      outline: none; border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .form-group input[type="file"] { padding: 8px; cursor: pointer; }
+    .info-box {
+      background: #f8f9fa; border-left: 4px solid #667eea;
+      padding: 16px; border-radius: 8px; margin-bottom: 24px;
+    }
+    .info-box h4 { color: #667eea; font-size: 14px; margin-bottom: 8px; }
+    .info-box ul { list-style: none; padding-left: 0; }
+    .info-box li {
+      font-size: 13px; color: #555; margin-bottom: 4px;
+      padding-left: 20px; position: relative;
+    }
+    .info-box li:before {
+      content: "✓"; position: absolute; left: 0;
+      color: #667eea; font-weight: bold;
+    }
+    .submit-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; border: none; border-radius: 8px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    .flash-messages { margin-bottom: 20px; }
+    .flash-message {
+      padding: 12px 16px; background: #fee; color: #c33;
+      border-radius: 8px; border-left: 4px solid #c33; margin-bottom: 10px;
+    }
+    .traffic-options {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .traffic-option { position: relative; }
+    .traffic-option input[type="radio"] { position: absolute; opacity: 0; }
+    .traffic-option label {
+      display: block; padding: 12px; text-align: center;
+      border: 2px solid #e0e0e0; border-radius: 8px;
+      cursor: pointer; transition: all 0.3s;
+      font-size: 14px; font-weight: 600;
+    }
+    .traffic-option input[type="radio"]:checked + label {
+      background: #667eea; color: white; border-color: #667eea;
+    }
+    .traffic-option label:hover { border-color: #667eea; }
+    .highlight-box {
+      background: #fff3cd; border-left: 4px solid #ffc107;
+      padding: 16px; border-radius: 8px; margin-bottom: 20px;
+    }
+    .highlight-box strong { color: #f57c00; }
+    @media (max-width: 600px) {
+      .content { padding: 24px; }
+      .form-grid, .traffic-options { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <h1>Simulate Motor Trip (Motor 4T)</h1>
-  <div class="card">
-    <form action="{{ url_for('simulate_route') }}" method="post" enctype="multipart/form-data">
-      <label>Upload GPX file (track points):</label>
-      <input type="file" name="gpxfile" accept=".gpx"/>
-      <p><small>Output: CSV per-second + plots. Default vehicle: Motor 4T. Events: lampu merah, polisi tidur, macet, sudden braking.</small></p>
-      <button type="submit">Simulate & Download</button>
-    </form>
+  <div class="container">
+    <div class="header">
+      <h1>🏍️ Motorcycle Trip Simulator</h1>
+      <p>Realistic GPX Analysis dengan Target Time Control</p>
+    </div>
+    
+    <div class="content">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for message in messages %}
+              <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
+      <div class="highlight-box">
+        <strong>🆕 NEW FEATURE:</strong> Target Time Control! Sekarang Anda bisa set berapa lama trip seharusnya, 
+        dan simulasi akan adjust speed & events untuk mencapai target. Contoh: 93km dalam 3 jam (180 menit) instead of 9 jam!
+      </div>
+      
+      <div class="info-box">
+        <h4>📋 Fitur Simulasi:</h4>
+        <ul>
+          <li>Target time control - set berapa lama trip seharusnya</li>
+          <li>6 comprehensive plots - termasuk component comparison</li>
+          <li>Deteksi otomatis: lampu merah, polisi tidur, kemacetan</li>
+          <li>Perhitungan performa: ban, rem, rantai/CVT, oli mesin</li>
+          <li>Temperature effect analysis & brake distribution</li>
+        </ul>
+      </div>
+      
+      <form action="{{ url_for('simulate_route') }}" method="post" enctype="multipart/form-data">
+        
+        <!-- GPX File -->
+        <div class="form-section">
+          <h3>📁 Upload GPX File</h3>
+          <div class="form-group">
+            <label for="gpxfile">Pilih file GPX route:</label>
+            <input type="file" id="gpxfile" name="gpxfile" accept=".gpx" required/>
+            <small>File GPX harus mengandung track points dengan data elevasi</small>
+          </div>
+        </div>
+        
+        <!-- Speed Parameters -->
+        <div class="form-section">
+          <h3>⚡ Parameter Kecepatan</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="max_speed">Kecepatan Maksimal (km/h):</label>
+              <input type="number" id="max_speed" name="max_speed" value="100" min="60" max="180" step="5" required/>
+              <small>Kecepatan tertinggi yang bisa dicapai</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="min_speed">Kecepatan Minimal (km/h):</label>
+              <input type="number" id="min_speed" name="min_speed" value="5" min="0" max="30" step="1" required/>
+              <small>Kecepatan terendah saat macet/berhenti</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="avg_speed">Kecepatan Rata-rata Target (km/h):</label>
+              <input type="number" id="avg_speed" name="avg_speed" value="55" min="20" max="120" step="5" required/>
+              <small>Kecepatan cruise normal (overridden by target time)</small>
+            </div>
+          </div>
+          
+          <!-- NEW: Target Time -->
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="target_time_minutes">
+                🆕 Target Waktu Tempuh (menit): <span style="color:#f39c12;font-weight:bold;">(OPTIONAL)</span>
+              </label>
+              <input type="number" id="target_time_minutes" name="target_time_minutes" 
+                     placeholder="Contoh: 180 untuk 3 jam" min="30" max="600" step="5"/>
+              <small style="color:#e74c3c;font-weight:600;">
+                Kosongkan jika ingin menggunakan avg speed. Jika diisi, simulasi akan adjust speed untuk mencapai target!
+                Contoh: 93km dalam 180 menit (3 jam) bukan 9 jam!
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Traffic Density -->
+        <div class="form-section">
+          <h3>🚦 Kepadatan Lalu Lintas</h3>
+          <div class="traffic-options">
+            <div class="traffic-option">
+              <input type="radio" id="traffic_low" name="traffic_density" value="low"/>
+              <label for="traffic_low">Rendah<br><small style="font-weight:normal;">Jalan sepi</small></label>
+            </div>
+            <div class="traffic-option">
+              <input type="radio" id="traffic_medium" name="traffic_density" value="medium" checked/>
+              <label for="traffic_medium">Sedang<br><small style="font-weight:normal;">Normal</small></label>
+            </div>
+            <div class="traffic-option">
+              <input type="radio" id="traffic_high" name="traffic_density" value="high"/>
+              <label for="traffic_high">Tinggi<br><small style="font-weight:normal;">Macet</small></label>
+            </div>
+          </div>
+          <small style="display: block; margin-top: 8px; color: #666;">
+            Menentukan frekuensi lampu merah, polisi tidur, dan kemacetan. Auto-adjust jika target time di-set!
+          </small>
+        </div>
+        
+        <!-- Vehicle Parameters -->
+        <div class="form-section">
+          <h3>🔧 Parameter Kendaraan</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="mass">Massa Total (kg):</label>
+              <input type="number" id="mass" name="mass" value="150" min="100" max="300" step="5" required/>
+              <small>Motor + pengendara + barang</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="wheelbase">Wheelbase (meter):</label>
+              <input type="number" id="wheelbase" name="wheelbase" value="1.3" min="1.0" max="1.8" step="0.05" required/>
+              <small>Jarak as roda depan ke belakang</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="temp_machine">Suhu Mesin (°C):</label>
+              <input type="number" id="temp_machine" name="temp_machine" value="95" min="60" max="120" step="5" required/>
+              <small>Suhu operasional mesin (normal: 90-100°C)</small>
+            </div>
+          </div>
+        </div>
+        
+        <button type="submit" class="submit-btn">
+          🚀 Mulai Simulasi & Analisis
+        </button>
+      </form>
+      
+      <div style="margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #666;">
+        <strong>💡 Tips Target Time:</strong>
+        <ul style="margin-top: 8px; padding-left: 20px;">
+          <li>Untuk 93km: Set 180 menit (3 jam) untuk hasil realistic ✅</li>
+          <li>Highway trip: 120-150 menit (2-2.5 jam)</li>
+          <li>City traffic: 240 menit (4 jam)</li>
+          <li>Kosongkan jika ingin simulasi normal tanpa target</li>
+        </ul>
+      </div>
+    </div>
   </div>
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul>
-      {% for m in messages %}
-        <li style="color:darkred">{{ m }}</li>
-      {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
 </body>
 </html>
