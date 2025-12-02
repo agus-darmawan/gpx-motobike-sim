@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Simulation Result</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width:1000px; margin:30px auto; }
+    .row { display:flex; gap:12px; align-items:center; }
+    .card { padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:12px; }
+    img { max-width:100%; border:1px solid #eee; }
+    a.btn { display:inline-block; background:#2b8aef; color:white; padding:8px 12px; border-radius:6px; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <h1>Simulation finished</h1>
+  <div class="card">
+    <p>Rows generated (per-second): <strong>{{ rows }}</strong></p>
+    <p><a class="btn" href="{{ csv_file }}">Download CSV</a></p>
+  </div>
+
+  <div class="card">
+    <h3>Plots</h3>
+    <div>
+      <h4>Speed vs Time</h4>
+      <img src="{{ img1 }}" alt="Speed vs Time" />
+    </div>
+    <div>
+      <h4>Elevation vs Distance</h4>
+      <img src="{{ img2 }}" alt="Elevation vs Distance" />
+    </div>
+    <div>
+      <h4>Speed vs Distance (brake markers)</h4>
+      <img src="{{ img3 }}" alt="Speed vs Distance" />
+    </div>
+  </div>
+
+  <p><a href="{{ url_for('index') }}">Simulate another GPX</a></p>
+</body>
+</html>

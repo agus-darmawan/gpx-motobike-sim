@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Simulate Motor Trip (4T) — Upload GPX</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width:900px; margin:40px auto; }
+    .card { padding:20px; border:1px solid #ddd; border-radius:8px; }
+    input[type=file] { display:block; margin:12px 0; }
+    button { padding:10px 14px; background:#2b8aef; color:white; border:none; border-radius:6px; }
+    small { color:#666; }
+  </style>
+</head>
+<body>
+  <h1>Simulate Motor Trip (Motor 4T)</h1>
+  <div class="card">
+    <form action="{{ url_for('simulate_route') }}" method="post" enctype="multipart/form-data">
+      <label>Upload GPX file (track points):</label>
+      <input type="file" name="gpxfile" accept=".gpx"/>
+      <p><small>Output: CSV per-second + plots. Default vehicle: Motor 4T. Events: lampu merah, polisi tidur, macet, sudden braking.</small></p>
+      <button type="submit">Simulate & Download</button>
+    </form>
+  </div>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul>
+      {% for m in messages %}
+        <li style="color:darkred">{{ m }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+</body>
+</html>
