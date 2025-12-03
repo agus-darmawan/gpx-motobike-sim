@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Motorcycle Trip Simulator - Pro</title>
+  <title>Motorcycle Trip Simulator v4.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -30,17 +30,17 @@
           <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full mix-blend-overlay filter blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
         </div>
         <div class="relative z-10">
-          <h1 class="text-5xl md:text-6xl font-black mb-4 tracking-tight">🏍️ Motorcycle Simulator</h1>
-          <p class="text-xl md:text-2xl font-light opacity-90">Professional GPX Analysis with AI-Powered Insights</p>
+          <h1 class="text-5xl md:text-6xl font-black mb-4 tracking-tight">🏍️ Motorcycle Simulator v4.0</h1>
+          <p class="text-xl md:text-2xl font-light opacity-90">Professional GPX Analysis with 12 Advanced Plots</p>
           <div class="mt-6 flex items-center justify-center gap-4 flex-wrap">
-            <span class="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-sm font-semibold backdrop-blur-sm">
-              ✨ 7 Advanced Plots
-            </span>
             <span class="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-sm font-semibold backdrop-blur-sm pulse-animation">
-              ⚡ Real-time Tracking
+              ✨ 12 PLOTS!
             </span>
             <span class="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-sm font-semibold backdrop-blur-sm">
-              🎯 Target Time Control
+              ⚡ FASTER Speed
+            </span>
+            <span class="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-sm font-semibold backdrop-blur-sm">
+              🌡️ SMOOTH Temp
             </span>
           </div>
         </div>
@@ -63,41 +63,55 @@
     {% endwith %}
 
     <!-- New Features -->
-    <div class="glass-effect rounded-2xl p-6 mb-8 shadow-xl hover-lift slide-in border-2 border-amber-300">
+    <div class="glass-effect rounded-2xl p-6 mb-8 shadow-xl hover-lift slide-in border-2 border-red-300">
       <div class="flex items-start gap-4">
-        <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
-          <span class="text-2xl">🆕</span>
+        <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 rounded-xl flex items-center justify-center">
+          <span class="text-2xl">🔥</span>
         </div>
         <div class="flex-1">
-          <h3 class="text-2xl font-bold text-gray-800 mb-2">ULTIMATE UPGRADE!</h3>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">ULTIMATE v4.0 - 12 PLOTS!</h3>
           <p class="text-gray-700 leading-relaxed mb-3">
-            <strong class="text-amber-600">Target Time Control</strong> sekarang bekerja sempurna! 
-            Set berapa lama trip seharusnya, simulator akan auto-adjust speed.
+            <strong class="text-red-600">SUPER UPGRADE:</strong> 
+            (1) <strong class="text-blue-600">FASTER Speed</strong> - rata-rata tinggi di jalan sepi (40% lebih cepat!)
+            (2) <strong class="text-orange-600">SMOOTH Temperature</strong> - linear accumulative, turun hanya 1-5°C saat idle
+            (3) <strong class="text-green-600">4 NEW PLOTS</strong> - brake vs elevation, speed vs elevation, component by zone, speed distribution!
           </p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div class="flex items-center gap-2 text-gray-700">
               <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              <span>Speed FIXED - realistic 30 km/h avg!</span>
+              <span>🚀 Low traffic = 40% faster! (can hit 70+ km/h avg)</span>
             </div>
             <div class="flex items-center gap-2 text-gray-700">
               <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              <span>ALL 8 components in Plot 6!</span>
+              <span>🌡️ Temp smooth - turun 1-5°C saat idle bentar</span>
             </div>
             <div class="flex items-center gap-2 text-gray-700">
               <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              <span>Per-second precision tracking</span>
+              <span>📊 Plot 9: Brake events vs elevation gain</span>
             </div>
             <div class="flex items-center gap-2 text-gray-700">
               <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
               </svg>
-              <span>Temperature & oil monitoring</span>
+              <span>📈 Plot 10: Speed vs elevation overlay</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-700">
+              <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>⛰️ Plot 11: Component usage by elevation</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-700">
+              <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>📦 Plot 12: Speed distribution by zone</span>
             </div>
           </div>
         </div>
@@ -194,7 +208,7 @@
               <div class="p-6 bg-white border-2 border-gray-200 rounded-xl peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all hover-lift">
                 <div class="text-4xl mb-3">🟢</div>
                 <h3 class="text-lg font-bold text-gray-800 mb-1">Low</h3>
-                <p class="text-sm text-gray-600">Jalan sepi</p>
+                <p class="text-sm text-gray-600">Jalan sepi - 40% lebih cepat!</p>
               </div>
             </label>
             
@@ -230,7 +244,7 @@
             <h2 class="text-2xl font-bold text-gray-800">Vehicle Parameters</h2>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Mass (kg)</label>
               <input type="number" name="mass" value="150" min="100" max="300" step="5" required
@@ -241,11 +255,42 @@
               <input type="number" name="wheelbase" value="1.3" min="1.0" max="1.8" step="0.05" required
                      class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"/>
             </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Temp (°C)</label>
-              <input type="number" name="temp_machine" value="95" min="60" max="120" step="5" required
-                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"/>
+          </div>
+          
+          <!-- Temperature Section -->
+          <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-6 border-2 border-red-200">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg flex items-center justify-center">
+                <span class="text-2xl">🌡️</span>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-gray-800">Engine Temperature Profile</h3>
+                <p class="text-xs text-gray-600 mt-1 font-medium">✨ SMOOTH: Accumulative heating, idle turun 1-5°C aja!</p>
+              </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Initial Temp (°C)</label>
+                <input type="number" name="temp_initial" value="70" min="50" max="90" step="5" required
+                       class="w-full px-4 py-3 border-2 border-red-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"/>
+                <p class="mt-1 text-xs text-gray-600">Suhu awal mesin</p>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Average Temp (°C)</label>
+                <input type="number" name="temp_avg" value="95" min="80" max="110" step="5" required
+                       class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"/>
+                <p class="mt-1 text-xs text-gray-600">Target suhu rata-rata</p>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Max Temp (°C)</label>
+                <input type="number" name="temp_max" value="120" min="100" max="130" step="5" required
+                       class="w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"/>
+                <p class="mt-1 text-xs text-gray-600">Suhu maksimum (limit)</p>
+              </div>
+            </div>
+            <p class="mt-3 text-sm text-gray-700 font-medium">
+              📊 Suhu naik <strong>accumulative</strong> saat riding, turun <strong>hanya 1-5°C</strong> saat idle bentar
+            </p>
           </div>
         </div>
 
@@ -254,10 +299,10 @@
       <!-- Submit -->
       <div class="bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 p-8">
         <button type="submit" class="w-full bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 font-black text-2xl py-6 rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-4 border-white">
-          🚀 START SIMULATION - 7 PLOTS!
+          🚀 START SIMULATION - 12 PLOTS!
         </button>
         <p class="text-center text-white text-sm mt-4 font-medium">
-          ⚡ ~10-15 seconds | 📊 7 plots | 🎯 AI-powered
+          ⚡ ~15-20 seconds | 📊 12 plots | 🎯 Faster & Smoother | 🌡️ Accumulative temp
         </p>
       </div>
     </form>

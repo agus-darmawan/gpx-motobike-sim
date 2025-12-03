@@ -27,10 +27,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
 
 # Constants from C code
-GRAVITY = 9.81
-A_STANDARD = 1.0
-K_CONSTANT = 0.05
-T_STANDARD = 90.0
+GRAVITY = 9.80655
+A_STANDARD = 0.5
+K_CONSTANT = 0.02
+T_STANDARD = 80.0
 
 def rear_tire_force(s_real, h, v_start, v_end, time_interval):
     if time_interval == 0 or s_real == 0:
@@ -57,7 +57,7 @@ def rear_brake_work(s_real, h, v_start, v_end, time_interval, mass, wheelbase):
 def count_s_oil(s_real, temp_machine):
     return s_real * math.exp(K_CONSTANT * (temp_machine - T_STANDARD))
 
-def calculate_performance_metrics(df, mass, wheelbase, temp_machine):
+def calculate_performance_metrics(df, mass, wheelbase, temp_profile):
     perf = {
         's_rear_tire': 0.0, 's_front_tire': 0.0, 's_rear_brake_pad': 0.0,
         's_front_brake_pad': 0.0, 's_chain_or_cvt': 0.0, 's_engine_oil': 0.0,
@@ -75,6 +75,9 @@ def calculate_performance_metrics(df, mass, wheelbase, temp_machine):
         v_end = curr_row['speed_m_s']
         time_interval = max(1, curr_row['time_s'] - prev_row['time_s'])
         is_braking = curr_row['brake']
+        
+        # Use actual temperature from temp_profile
+        current_temp = temp_profile[i] if i < len(temp_profile) else temp_profile[-1]
         
         if is_braking:
             delta_rear_brake = rear_brake_work(s_real, h, v_start, v_end, time_interval, mass, wheelbase)
@@ -94,7 +97,7 @@ def calculate_performance_metrics(df, mass, wheelbase, temp_machine):
             perf['s_front_tire'] += s_real
             perf['s_chain_or_cvt'] += delta_rear_tire
         
-        perf['s_engine_oil'] += count_s_oil(s_real, temp_machine)
+        perf['s_engine_oil'] += count_s_oil(s_real, current_temp)
         perf['s_engine'] += s_real
         perf['s_air_filter'] += s_real
         if curr_row['speed_kmh'] > perf['max_speed']:
@@ -162,8 +165,8 @@ def place_events_along_route(total_dist_m, traffic_density, target_time_minutes,
             traffic_density = 'medium'
     
     if traffic_density == 'low':
-        light_freq = (8000, 15000); light_prob = 0.08
-        bump_freq = (6000, 12000); bump_prob = 0.1
+        light_freq = (12000, 20000); light_prob = 0.05
+        bump_freq = (10000, 18000); bump_prob = 0.06
         macet_count = 0
     elif traffic_density == 'medium':
         light_freq = (4000, 8000); light_prob = 0.15
@@ -208,13 +211,18 @@ def simulate_motor_4t(track_points, params, seed=42):
     total_dist_m = calculate_total_distance(track_points)
     total_dist_km = total_dist_m / 1000.0
     
+    # IMPROVEMENT: Faster speeds for low traffic
+    if traffic_density == 'low':
+        base_cruise_kmh *= 1.4  # 40% faster on empty roads
+        max_speed_kmh = min(max_speed_kmh * 1.2, 150)  # Can go faster
+    
     if target_time_minutes and target_time_minutes > 0:
         required_avg_kmh = (total_dist_km) / (target_time_minutes / 60.0)
         base_cruise_kmh = min(max_speed_kmh * 0.95, required_avg_kmh * 1.8)
         base_cruise_kmh = max(min_speed_kmh * 3, base_cruise_kmh)
         print(f"TARGET: {total_dist_km:.1f}km in {target_time_minutes}min needs {required_avg_kmh:.1f} km/h avg, cruise={base_cruise_kmh:.1f}")
     
-    max_acc_m_s2 = 4.0
+    max_acc_m_s2 = 4.5  # Slightly faster acceleration
     max_dec_m_s2 = 8.0
     brake_threshold = 1.5
     
@@ -250,12 +258,16 @@ def simulate_motor_4t(track_points, params, seed=42):
     dist_accum = 0.0
     speed = min(base_cruise_kmh, max_speed_kmh) / 3.6
     
+    # Human-like speed variations - reduced for smoother but still realistic
+    speed_momentum = 0.0
+    hesitation_counter = 0
+    
     for idx, s in enumerate(segs):
         slope = s['slope']
         if slope > 0.03:
-            slope_penalty = 0.1 + min(0.3, slope * 4)
+            slope_penalty = 0.08 + min(0.25, slope * 3.5)  # Less penalty uphill
         elif slope < -0.04:
-            slope_penalty = -0.08
+            slope_penalty = -0.06  # Slight downhill boost
         else:
             slope_penalty = 0.0
         
@@ -278,9 +290,9 @@ def simulate_motor_4t(track_points, params, seed=42):
             if m1*m2 > 0:
                 angle_rad = math.acos(max(-1.0, min(1.0, dot/(m1*m2))))
         
-        curvature_penalty = (angle_rad / math.radians(90)) * 0.5
+        curvature_penalty = (angle_rad / math.radians(90)) * 0.4  # Less penalty for curves
         
-        target_kmh = base_cruise_kmh * (1.0 - 0.3 * curvature_penalty - slope_penalty)
+        target_kmh = base_cruise_kmh * (1.0 - 0.25 * curvature_penalty - slope_penalty)
         target_kmh = max(min_speed_kmh, min(max_speed_kmh, target_kmh))
         
         event = seg_event[idx]
@@ -293,18 +305,18 @@ def simulate_motor_4t(track_points, params, seed=42):
             elif "macet" in ev_list:
                 target_kmh = random.uniform(15.0, 35.0)
         
-        if curvature_penalty < 0.05 and abs(slope) < 0.02 and random.random() < 0.05:
-            target_kmh = min(max_speed_kmh, target_kmh * random.uniform(1.2, 1.4))
+        if curvature_penalty < 0.05 and abs(slope) < 0.02 and random.random() < 0.08:
+            target_kmh = min(max_speed_kmh, target_kmh * random.uniform(1.15, 1.35))
         
         target = target_kmh / 3.6
         segdist = s['dist']
         u = speed
         
         if target > u:
-            a = max_acc_m_s2 * random.uniform(0.8, 1.0)
+            a = max_acc_m_s2 * random.uniform(0.85, 1.0)
             v_end = min(math.sqrt(max(0.0, u*u + 2*a*segdist)), target)
         else:
-            a = max_dec_m_s2 * random.uniform(0.7, 1.0)
+            a = max_dec_m_s2 * random.uniform(0.75, 1.0)
             v_end = math.sqrt(max(0.0, u*u - 2*a*segdist))
             if event and ("lampu_merah" in event):
                 v_end = min(v_end, target)
@@ -318,7 +330,33 @@ def simulate_motor_4t(track_points, params, seed=42):
             lat = s['lat1'] + (s['lat2'] - s['lat1']) * frac
             lon = s['lon1'] + (s['lon2'] - s['lon1']) * frac
             ele = s['ele1'] + (s['ele2'] - s['ele1']) * frac
-            sp = max(0.0, (u + (v_end - u) * frac) + random.normalvariate(0, 0.15))
+            
+            # Base speed interpolation
+            sp_base = u + (v_end - u) * frac
+            
+            # REDUCED variations for more consistent speed
+            # 1. Momentum (smoother)
+            speed_momentum = speed_momentum * 0.90 + random.normalvariate(0, 0.25) * 0.10
+            
+            # 2. Micro-adjustments (smaller)
+            micro_adjust = random.uniform(-0.5, 0.5)
+            
+            # 3. Occasional hesitations (less frequent)
+            hesitation = 0.0
+            if random.random() < 0.05:  # 5% chance (was 8%)
+                hesitation_counter = random.randint(1, 2)
+            if hesitation_counter > 0:
+                hesitation = random.uniform(-1.0, -0.3)
+                hesitation_counter -= 1
+            
+            # 4. Speed noise (reduced)
+            speed_noise = random.normalvariate(0, 0.2 + sp_base * 0.01)
+            
+            # Combine all variations
+            sp = sp_base + speed_momentum + micro_adjust + hesitation + speed_noise
+            
+            # Clamp
+            sp = max(0.0, min(sp, v_end * 1.12 if v_end > u else v_end * 0.88))
             
             records.append({
                 'time_s': time_s, 'lat': lat, 'lon': lon, 'ele_m': ele,
@@ -361,20 +399,117 @@ def simulate_motor_4t(track_points, params, seed=42):
     
     return df_out
 
-def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
+def calculate_temperature_profile(df, temp_initial, temp_avg, temp_max):
+    """
+    IMPROVED: Smoother linear temperature progression.
+    - Accumulative heating during riding
+    - Very slow cooling only when idle
+    - Temperature drops significantly only near end
+    """
+    temp_profile = []
+    current_temp = temp_initial
+    cumulative_heat = 0.0  # Track accumulated heat
+    
+    total_time = len(df)
+    
+    for i in range(len(df)):
+        speed_kmh = df.iloc[i]['speed_kmh']
+        
+        if i > 0:
+            is_braking = df.iloc[i]['brake']
+            ele_change = df.iloc[i]['ele_m'] - df.iloc[i-1]['ele_m'] if i > 0 else 0
+            
+            # IMPROVED: More realistic heating model
+            # Heat accumulates during riding, cools only when truly idle
+            
+            if speed_kmh > 70:
+                # High speed = significant heating
+                heat_gain = 0.25 + (speed_kmh - 70) * 0.01
+                target_temp = temp_avg + (temp_max - temp_avg) * 0.8
+            elif speed_kmh > 50:
+                # Medium-high speed = steady heating
+                heat_gain = 0.15
+                target_temp = temp_avg + (temp_max - temp_avg) * 0.5
+            elif speed_kmh > 30:
+                # Medium speed = maintain/slight heating
+                heat_gain = 0.08
+                target_temp = temp_avg + (temp_max - temp_avg) * 0.2
+            elif speed_kmh > 15:
+                # Slow speed = minimal heating
+                heat_gain = 0.03
+                target_temp = temp_avg
+            elif speed_kmh > 5:
+                # Very slow = start cooling (but slow)
+                heat_gain = -0.02
+                target_temp = temp_avg - (temp_avg - temp_initial) * 0.2
+            else:
+                # Idle/stopped = cooling (but only 1-5 degrees)
+                # Check if near end of trip
+                time_remaining = total_time - i
+                if time_remaining < 60:  # Last minute
+                    heat_gain = -0.12  # Faster cooling near end
+                elif time_remaining < 180:  # Last 3 minutes
+                    heat_gain = -0.06
+                else:
+                    heat_gain = -0.03  # Very slow cooling
+                target_temp = current_temp - random.uniform(1, 5)
+            
+            # Uphill increases heat
+            if ele_change > 2.0:
+                heat_gain += 0.08 * (ele_change / 10.0)
+                target_temp += 3
+            
+            # Braking reduces heat slightly (but not much)
+            if is_braking and speed_kmh > 20:
+                heat_gain -= 0.02
+            
+            # Accumulate heat
+            cumulative_heat += heat_gain
+            
+            # Temperature changes based on accumulated heat
+            # Linear progression towards target
+            temp_diff = target_temp - current_temp
+            current_temp += temp_diff * 0.05 + heat_gain
+            
+            # Very small random fluctuation (±0.3°C)
+            current_temp += random.normalvariate(0, 0.3)
+            
+            # Enforce limits
+            current_temp = max(temp_initial - 3, min(temp_max, current_temp))
+        
+        temp_profile.append(current_temp)
+    
+    return temp_profile
+
+def make_plots(df, perf_metrics, temp_profile, mass, wheelbase, temp_params, out_prefix):
     t_sec = df['time_s'].values
     speed = df['speed_kmh'].values
     dist = df['dist_m'].values / 1000.0
     ele = df['ele_m'].values
     brake_mask = df['brake'].values
     
-    # Plot 1: Speed vs Time (PER SECOND)
+    # Calculate elevation gain/loss
+    ele_gain = []
+    ele_loss = []
+    for i in range(1, len(ele)):
+        delta = ele[i] - ele[i-1]
+        if delta > 0:
+            ele_gain.append(delta)
+            ele_loss.append(0)
+        else:
+            ele_gain.append(0)
+            ele_loss.append(abs(delta))
+    
+    cumulative_gain = np.cumsum([0] + ele_gain)
+    cumulative_loss = np.cumsum([0] + ele_loss)
+    
+    # Plot 1: Speed vs Time
     plt.figure(figsize=(14,5))
     plt.plot(t_sec, speed, linewidth=1.2, color='#2b8aef', alpha=0.7)
     plt.scatter(t_sec[brake_mask], speed[brake_mask], color='red', s=10, label='Brake', alpha=0.5, zorder=5)
     plt.xlabel('Time (seconds)', fontsize=12, fontweight='bold')
     plt.ylabel('Speed (km/h)', fontsize=12, fontweight='bold')
-    plt.title('Speed Profile Over Time (Per Second)', fontsize=14, fontweight='bold')
+    plt.title('Speed Profile Over Time - Natural Variation', fontsize=14, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.legend()
     fn1 = f"{out_prefix}_speed_time.png"
@@ -397,13 +532,13 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
     plt.scatter(dist[brake_mask], speed[brake_mask], color='red', s=10, label='Brake', alpha=0.5, zorder=5)
     plt.xlabel('Distance (km)', fontsize=12, fontweight='bold')
     plt.ylabel('Speed (km/h)', fontsize=12, fontweight='bold')
-    plt.title('Speed Profile Over Distance (Per Second)', fontsize=14, fontweight='bold')
+    plt.title('Speed Profile Over Distance - Human-like', fontsize=14, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.legend()
     fn3 = f"{out_prefix}_speed_dist.png"
     plt.tight_layout(); plt.savefig(fn3, dpi=150); plt.close()
     
-    # Plot 4: Component Comparison - ALL 8
+    # Plot 4: Component Comparison
     plt.figure(figsize=(16,7))
     real_dist = perf_metrics['total_distance_km']
     components = ['Rear\nTire', 'Front\nTire', 'Rear\nBrake', 'Front\nBrake', 'Chain/\nCVT', 'Oil\nEquiv', 'Engine', 'Air\nFilter']
@@ -427,9 +562,9 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
                 f'{val:.1f}\n({sign}{diff:.1f})',
                 ha='center', va='bottom', fontsize=10, fontweight='bold')
     
-    plt.xlabel('Components (ALL 8)', fontsize=13, fontweight='bold')
+    plt.xlabel('Components', fontsize=13, fontweight='bold')
     plt.ylabel('Distance Equivalent (km)', fontsize=13, fontweight='bold')
-    plt.title('Component Wear vs Real Distance - ALL 8 COMPONENTS', fontsize=15, fontweight='bold')
+    plt.title('Component Wear vs Real Distance', fontsize=15, fontweight='bold')
     plt.xticks(x_pos, components, fontsize=11)
     plt.legend(fontsize=12, loc='upper left')
     plt.grid(True, alpha=0.3, axis='y')
@@ -466,24 +601,15 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
     fn5 = f"{out_prefix}_brake_analysis.png"
     plt.tight_layout(); plt.savefig(fn5, dpi=150); plt.close()
     
-    # Plot 6: ALL 8 COMPONENTS Real-time Tracking (PER SECOND)
+    # Plot 6: Real-time ALL 8 Components
     plt.figure(figsize=(20,11))
     
-    # Calculate cumulative for ALL 8 components
     cumulative = {
-        'actual': [],
-        'rear_tire': [],
-        'front_tire': [],
-        'rear_brake': [],
-        'front_brake': [],
-        'chain_cvt': [],
-        'oil': [],
-        'engine': [],
-        'air_filter': []
+        'actual': [], 'rear_tire': [], 'front_tire': [], 'rear_brake': [],
+        'front_brake': [], 'chain_cvt': [], 'oil': [], 'engine': [], 'air_filter': []
     }
     
     cum_vals = {k: 0.0 for k in cumulative.keys()}
-    
     df['speed_m_s'] = df['speed_kmh'] / 3.6
     
     for i in range(1, len(df)):
@@ -494,6 +620,7 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
         v_start = prev_row['speed_m_s']
         v_end = curr_row['speed_m_s']
         time_interval = max(1, curr_row['time_s'] - prev_row['time_s'])
+        current_temp = temp_profile[i]
         
         if curr_row['brake']:
             delta_rear_brake = rear_brake_work(s_real, h, v_start, v_end, time_interval, mass, wheelbase)
@@ -515,7 +642,7 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
             cum_vals['front_tire'] += s_real
             cum_vals['chain_cvt'] += delta_rear
         
-        cum_vals['oil'] += count_s_oil(s_real, temp_machine)
+        cum_vals['oil'] += count_s_oil(s_real, current_temp)
         cum_vals['engine'] += s_real
         cum_vals['air_filter'] += s_real
         cum_vals['actual'] = curr_row['dist_m'] / 1000.0
@@ -526,7 +653,7 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
     time_plot = df['time_s'].values[1:]
     
     fig, axes = plt.subplots(2, 4, figsize=(22, 11))
-    fig.suptitle('Real-time Tracking: ALL 8 COMPONENTS (Per Second)', fontsize=18, fontweight='bold')
+    fig.suptitle('Real-time Tracking: ALL 8 COMPONENTS', fontsize=18, fontweight='bold')
     
     components_data = [
         ('rear_tire', 'Rear Tire', '#e74c3c'),
@@ -558,77 +685,257 @@ def make_plots(df, perf_metrics, temp_machine, mass, wheelbase, out_prefix):
         ax.legend(fontsize=10, loc='upper left')
         ax.grid(True, alpha=0.4, linestyle='--')
     
-    fn6 = f"{out_prefix}_realtime_all_8_components.png"
+    fn6 = f"{out_prefix}_realtime_all_8.png"
     plt.tight_layout()
     plt.savefig(fn6, dpi=150)
     plt.close()
     
-    # Plot 7: Temperature & Oil Per Second
+    # Plot 7: Temperature & Oil (SMOOTH LINEAR)
     plt.figure(figsize=(16,9))
     
-    temp_profile = []
     oil_wear_rate = []
-    
-    for i in range(len(df)):
-        curr_speed = df.iloc[i]['speed_kmh']
-        if i > 0:
-            if curr_speed > 80:
-                temp_var = temp_machine + random.uniform(0, 12)
-            elif curr_speed > 60:
-                temp_var = temp_machine + random.uniform(-5, 8)
-            elif curr_speed > 30:
-                temp_var = temp_machine + random.uniform(-10, 3)
-            else:
-                temp_var = temp_machine + random.uniform(-15, -3)
-            
-            if len(temp_profile) > 0:
-                temp_var = temp_profile[-1] * 0.85 + temp_var * 0.15
-        else:
-            temp_var = temp_machine
-        
-        temp_profile.append(max(60, min(120, temp_var)))
-        oil_factor = math.exp(K_CONSTANT * (temp_profile[-1] - T_STANDARD))
+    for temp in temp_profile:
+        oil_factor = math.exp(K_CONSTANT * (temp - T_STANDARD))
         oil_wear_rate.append(oil_factor)
     
     plt.subplot(2, 1, 1)
-    plt.plot(t_sec, temp_profile, linewidth=2.2, color='#e74c3c', alpha=0.85)
-    plt.axhline(y=temp_machine, color='#2ecc71', linestyle='--', linewidth=2.5, label=f'Average ({temp_machine}°C)')
-    plt.axhline(y=T_STANDARD, color='#3498db', linestyle='--', linewidth=2.5, label=f'Standard ({T_STANDARD}°C)')
-    plt.fill_between(t_sec, 60, temp_profile, alpha=0.25, color='#e74c3c')
+    plt.plot(t_sec, temp_profile, linewidth=2.5, color='#e74c3c', alpha=0.9, label='Actual Temperature')
+    plt.axhline(y=temp_params['temp_avg'], color='#2ecc71', linestyle='--', linewidth=2.5, label=f'Target Avg ({temp_params["temp_avg"]}°C)')
+    plt.axhline(y=temp_params['temp_initial'], color='#3498db', linestyle='--', linewidth=2, label=f'Initial ({temp_params["temp_initial"]}°C)')
+    plt.axhline(y=temp_params['temp_max'], color='#e74c3c', linestyle='--', linewidth=2, label=f'Max Limit ({temp_params["temp_max"]}°C)')
+    plt.fill_between(t_sec, temp_params['temp_initial'], temp_profile, alpha=0.25, color='#e74c3c')
     plt.xlabel('Time (seconds)', fontsize=13, fontweight='bold')
     plt.ylabel('Temperature (°C)', fontsize=13, fontweight='bold')
-    plt.title('Engine Temperature Profile (Per Second)', fontsize=15, fontweight='bold')
+    plt.title('Engine Temperature - Smooth Linear Progression (Accumulative Heating)', fontsize=15, fontweight='bold')
     plt.grid(True, alpha=0.4, linestyle='--')
-    plt.legend(fontsize=12, loc='best')
-    plt.ylim(60, 120)
+    plt.legend(fontsize=11, loc='best')
+    plt.ylim(temp_params['temp_initial'] - 10, temp_params['temp_max'] + 5)
     
     plt.subplot(2, 1, 2)
-    plt.plot(t_sec, oil_wear_rate, linewidth=2.2, color='#f39c12', alpha=0.85)
-    plt.axhline(y=1.0, color='#2ecc71', linestyle='--', linewidth=2.5, label='Standard (1.0x)')
+    plt.plot(t_sec, oil_wear_rate, linewidth=2.2, color='#f39c12', alpha=0.85, label='Oil Degradation Rate')
+    plt.axhline(y=1.0, color='#2ecc71', linestyle='--', linewidth=2.5, label='Standard (1.0x at 90°C)')
     plt.fill_between(t_sec, 0, oil_wear_rate, alpha=0.25, color='#f39c12')
     plt.xlabel('Time (seconds)', fontsize=13, fontweight='bold')
     plt.ylabel('Oil Wear Factor', fontsize=13, fontweight='bold')
-    plt.title('Oil Degradation Rate (Per Second)', fontsize=15, fontweight='bold')
+    plt.title('Oil Degradation Rate', fontsize=15, fontweight='bold')
     plt.grid(True, alpha=0.4, linestyle='--')
-    plt.legend(fontsize=12, loc='best')
+    plt.legend(fontsize=11, loc='best')
     
     avg_temp = np.mean(temp_profile)
     max_temp = np.max(temp_profile)
     min_temp = np.min(temp_profile)
-    avg_oil_rate = np.mean(oil_wear_rate)
-    max_oil_rate = np.max(oil_wear_rate)
-    min_oil_rate = np.min(oil_wear_rate)
     
-    stats_text = f"Temperature: Avg={avg_temp:.1f}°C Max={max_temp:.1f}°C Min={min_temp:.1f}°C  |  Oil Rate: Avg={avg_oil_rate:.2f}x Max={max_oil_rate:.2f}x Min={min_oil_rate:.2f}x"
+    stats_text = f"Temp: Avg={avg_temp:.1f}°C Max={max_temp:.1f}°C Min={min_temp:.1f}°C | Smooth linear with accumulative heating"
     plt.figtext(0.5, 0.02, stats_text, ha='center', fontsize=12, fontweight='bold',
                 bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.8, edgecolor='black', linewidth=2))
     
-    fn7 = f"{out_prefix}_temperature_oil_per_second.png"
+    fn7 = f"{out_prefix}_temperature_smooth.png"
     plt.tight_layout(rect=[0, 0.04, 1, 1])
     plt.savefig(fn7, dpi=150)
     plt.close()
     
-    return fn1, fn2, fn3, fn4, fn5, fn6, fn7
+    # Plot 8: Combined Line Chart
+    plt.figure(figsize=(18, 10))
+    
+    time_plot_all = df['time_s'].values[1:]
+    
+    plt.plot(time_plot_all, cumulative['actual'], linewidth=3.5, color='#000000', 
+             label='Actual Distance', alpha=1.0, linestyle='-', zorder=10)
+    
+    components_line = [
+        ('rear_tire', 'Rear Tire', '#e74c3c', '--'),
+        ('front_tire', 'Front Tire', '#3498db', '--'),
+        ('rear_brake', 'Rear Brake Pad', '#e67e22', '-.'),
+        ('front_brake', 'Front Brake Pad', '#9b59b6', '-.'),
+        ('chain_cvt', 'Chain/CVT', '#1abc9c', ':'),
+        ('oil', 'Engine Oil', '#f39c12', ':'),
+        ('engine', 'Engine', '#2ecc71', '-'),
+        ('air_filter', 'Air Filter', '#95a5a6', '-')
+    ]
+    
+    for key, label, color, linestyle in components_line:
+        plt.plot(time_plot_all, cumulative[key], linewidth=2.2, color=color, 
+                label=label, alpha=0.75, linestyle=linestyle)
+    
+    plt.xlabel('Time (seconds)', fontsize=14, fontweight='bold')
+    plt.ylabel('Distance (km)', fontsize=14, fontweight='bold')
+    plt.title('ALL COMPONENTS vs ACTUAL - Combined Line Chart', fontsize=16, fontweight='bold', pad=15)
+    plt.legend(fontsize=11, loc='upper left', ncol=2, framealpha=0.95, edgecolor='black', shadow=True)
+    plt.grid(True, alpha=0.4, linestyle='--', linewidth=0.8)
+    
+    fn8 = f"{out_prefix}_all_combined.png"
+    plt.tight_layout()
+    plt.savefig(fn8, dpi=150)
+    plt.close()
+    
+    # Plot 9: NEW - Brake vs Elevation Gain
+    plt.figure(figsize=(16, 7))
+    
+    plt.subplot(1, 2, 1)
+    brake_times = t_sec[1:][brake_mask[1:]]
+    brake_elevations = ele[1:][brake_mask[1:]]
+    plt.scatter(brake_elevations, brake_times, c='red', s=30, alpha=0.6, edgecolors='darkred')
+    plt.xlabel('Elevation (m)', fontsize=12, fontweight='bold')
+    plt.ylabel('Time (seconds)', fontsize=12, fontweight='bold')
+    plt.title('Brake Events vs Elevation', fontsize=14, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(dist[1:], cumulative_gain[1:], color='green', linewidth=2, label='Cumulative Gain', alpha=0.8)
+    plt.plot(dist[1:], cumulative_loss[1:], color='orange', linewidth=2, label='Cumulative Loss', alpha=0.8)
+    brake_dist = dist[1:][brake_mask[1:]]
+    brake_gain_at_brake = []
+    for bd in brake_dist:
+        idx = np.argmin(np.abs(dist[1:] - bd))
+        brake_gain_at_brake.append(cumulative_gain[1:][idx])
+    plt.scatter(brake_dist, brake_gain_at_brake, c='red', s=40, alpha=0.7, edgecolors='darkred', label='Brakes', zorder=5)
+    plt.xlabel('Distance (km)', fontsize=12, fontweight='bold')
+    plt.ylabel('Cumulative Elevation Change (m)', fontsize=12, fontweight='bold')
+    plt.title('Brake Events vs Elevation Gain/Loss', fontsize=14, fontweight='bold')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    fn9 = f"{out_prefix}_brake_vs_elevation.png"
+    plt.tight_layout()
+    plt.savefig(fn9, dpi=150)
+    plt.close()
+    
+    # Plot 10: NEW - Speed vs Elevation Profile (Overlay)
+    plt.figure(figsize=(16, 8))
+    
+    ax1 = plt.gca()
+    color = 'tab:blue'
+    ax1.set_xlabel('Distance (km)', fontsize=13, fontweight='bold')
+    ax1.set_ylabel('Speed (km/h)', color=color, fontsize=13, fontweight='bold')
+    ax1.plot(dist, speed, color=color, linewidth=2, alpha=0.8, label='Speed')
+    ax1.tick_params(axis='y', labelcolor=color)
+    ax1.grid(True, alpha=0.3)
+    
+    ax2 = ax1.twinx()
+    color = 'tab:green'
+    ax2.set_ylabel('Elevation (m)', color=color, fontsize=13, fontweight='bold')
+    ax2.fill_between(dist, ele, alpha=0.3, color=color)
+    ax2.plot(dist, ele, color=color, linewidth=1.5, alpha=0.8, label='Elevation')
+    ax2.tick_params(axis='y', labelcolor=color)
+    
+    plt.title('Speed vs Elevation Profile - Overlay', fontsize=15, fontweight='bold')
+    
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=11)
+    
+    fn10 = f"{out_prefix}_speed_vs_elevation.png"
+    plt.tight_layout()
+    plt.savefig(fn10, dpi=150)
+    plt.close()
+    
+    # Plot 11: NEW - Component Usage Based on Elevation
+    plt.figure(figsize=(18, 10))
+    
+    # Divide route into elevation zones
+    ele_bins = np.linspace(ele.min(), ele.max(), 6)
+    ele_labels = [f'{ele_bins[i]:.0f}-{ele_bins[i+1]:.0f}m' for i in range(len(ele_bins)-1)]
+    
+    # Calculate component wear in each zone
+    zone_wear = {comp: [0]*5 for comp in ['rear_tire', 'front_tire', 'rear_brake', 'front_brake', 'chain_cvt', 'oil', 'engine', 'air_filter']}
+    
+    df['speed_m_s'] = df['speed_kmh'] / 3.6
+    
+    for i in range(1, len(df)):
+        curr_ele = df.iloc[i]['ele_m']
+        zone_idx = min(4, max(0, np.digitize(curr_ele, ele_bins) - 1))
+        
+        prev_row = df.iloc[i-1]
+        curr_row = df.iloc[i]
+        s_real = max(0.01, curr_row['dist_m'] - prev_row['dist_m'])
+        h = curr_row['ele_m'] - prev_row['ele_m']
+        v_start = prev_row['speed_m_s']
+        v_end = curr_row['speed_m_s']
+        time_interval = max(1, curr_row['time_s'] - prev_row['time_s'])
+        current_temp = temp_profile[i]
+        
+        if curr_row['brake']:
+            delta_rear_brake = rear_brake_work(s_real, h, v_start, v_end, time_interval, mass, wheelbase)
+            delta_front_brake = front_brake_work(s_real, h, v_start, v_end, time_interval, mass, wheelbase)
+            zone_wear['rear_tire'][zone_idx] += delta_rear_brake / 1000.0
+            zone_wear['front_tire'][zone_idx] += delta_front_brake / 1000.0
+            zone_wear['rear_brake'][zone_idx] += delta_rear_brake / 1000.0
+            zone_wear['front_brake'][zone_idx] += delta_front_brake / 1000.0
+            zone_wear['chain_cvt'][zone_idx] += delta_rear_brake / 1000.0
+        else:
+            delta_rear = s_real
+            if h > 0 and v_end >= v_start:
+                delta_rear = rear_tire_force(s_real, h, v_start, v_end, time_interval)
+            elif h <= 0 and v_end > v_start:
+                delta_rear = rear_tire_force(s_real, h, v_start, v_end, time_interval)
+            zone_wear['rear_tire'][zone_idx] += delta_rear / 1000.0
+            zone_wear['front_tire'][zone_idx] += s_real / 1000.0
+            zone_wear['chain_cvt'][zone_idx] += delta_rear / 1000.0
+        
+        zone_wear['oil'][zone_idx] += count_s_oil(s_real, current_temp) / 1000.0
+        zone_wear['engine'][zone_idx] += s_real / 1000.0
+        zone_wear['air_filter'][zone_idx] += s_real / 1000.0
+    
+    # Plot stacked bar chart
+    x = np.arange(len(ele_labels))
+    width = 0.15
+    
+    colors_comp = ['#e74c3c', '#3498db', '#e67e22', '#9b59b6', '#1abc9c', '#f39c12', '#2ecc71', '#95a5a6']
+    comp_names = ['Rear Tire', 'Front Tire', 'Rear Brake', 'Front Brake', 'Chain/CVT', 'Oil', 'Engine', 'Air Filter']
+    
+    for idx, (comp, name) in enumerate(zip(['rear_tire', 'front_tire', 'rear_brake', 'front_brake', 'chain_cvt', 'oil', 'engine', 'air_filter'], comp_names)):
+        plt.bar(x + idx*width, zone_wear[comp], width, label=name, color=colors_comp[idx], alpha=0.8)
+    
+    plt.xlabel('Elevation Zone', fontsize=13, fontweight='bold')
+    plt.ylabel('Component Wear (km equivalent)', fontsize=13, fontweight='bold')
+    plt.title('Component Usage Based on Elevation Zones', fontsize=15, fontweight='bold')
+    plt.xticks(x + width*3.5, ele_labels, fontsize=10)
+    plt.legend(ncol=2, fontsize=10, loc='upper left')
+    plt.grid(True, alpha=0.3, axis='y')
+    
+    fn11 = f"{out_prefix}_component_by_elevation.png"
+    plt.tight_layout()
+    plt.savefig(fn11, dpi=150)
+    plt.close()
+    
+    # Plot 12: NEW - Speed Distribution by Elevation Zones
+    plt.figure(figsize=(16, 8))
+    
+    zone_speeds = {i: [] for i in range(5)}
+    for i in range(len(df)):
+        curr_ele = df.iloc[i]['ele_m']
+        zone_idx = min(4, max(0, np.digitize(curr_ele, ele_bins) - 1))
+        zone_speeds[zone_idx].append(df.iloc[i]['speed_kmh'])
+    
+    plt.subplot(1, 2, 1)
+    bp = plt.boxplot([zone_speeds[i] for i in range(5)], labels=ele_labels, patch_artist=True)
+    for patch, color in zip(bp['boxes'], ['#3498db']*5):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+    plt.xlabel('Elevation Zone', fontsize=12, fontweight='bold')
+    plt.ylabel('Speed (km/h)', fontsize=12, fontweight='bold')
+    plt.title('Speed Distribution by Elevation', fontsize=14, fontweight='bold')
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.xticks(rotation=15)
+    
+    plt.subplot(1, 2, 2)
+    avg_speeds = [np.mean(zone_speeds[i]) for i in range(5)]
+    plt.bar(ele_labels, avg_speeds, color='#2ecc71', alpha=0.8, edgecolor='black', linewidth=1.5)
+    plt.xlabel('Elevation Zone', fontsize=12, fontweight='bold')
+    plt.ylabel('Average Speed (km/h)', fontsize=12, fontweight='bold')
+    plt.title('Average Speed by Elevation Zone', fontsize=14, fontweight='bold')
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.xticks(rotation=15)
+    
+    for i, v in enumerate(avg_speeds):
+        plt.text(i, v + 1, f'{v:.1f}', ha='center', fontweight='bold')
+    
+    fn12 = f"{out_prefix}_speed_by_elevation.png"
+    plt.tight_layout()
+    plt.savefig(fn12, dpi=150)
+    plt.close()
+    
+    return fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, fn11, fn12
 
 @app.route("/", methods=['GET'])
 def index():
@@ -654,7 +961,14 @@ def simulate_route():
             target_time_minutes = request.form.get('target_time_minutes', '')
             mass = float(request.form.get('mass', 150))
             wheelbase = float(request.form.get('wheelbase', 1.3))
-            temp_machine = float(request.form.get('temp_machine', 95))
+            
+            temp_initial = float(request.form.get('temp_initial', 70))
+            temp_avg = float(request.form.get('temp_avg', 95))
+            temp_max = float(request.form.get('temp_max', 120))
+            
+            if not (temp_initial < temp_avg < temp_max):
+                flash("Temperature parameters must satisfy: Initial < Average < Max")
+                return redirect(url_for('index'))
             
             if target_time_minutes and target_time_minutes.strip():
                 try:
@@ -692,20 +1006,24 @@ def simulate_route():
             
             print(f"\n{'='*70}")
             print(f"SIMULATION STARTING...")
-            print(f"Max Speed: {max_speed} km/h")
-            print(f"Target Time: {target_time_minutes if target_time_minutes else 'Not set'} minutes")
+            print(f"Max Speed: {max_speed} km/h | Traffic: {traffic_density}")
+            print(f"Temperature: {temp_initial}°C → {temp_avg}°C → max {temp_max}°C")
+            print(f"Target Time: {target_time_minutes if target_time_minutes else 'Not set'} min")
             print(f"{'='*70}\n")
             
             df = simulate_motor_4t(pts, params, seed=random.randint(0, 9999))
-            perf_metrics = calculate_performance_metrics(df, mass, wheelbase, temp_machine)
+            temp_profile = calculate_temperature_profile(df, temp_initial, temp_avg, temp_max)
+            perf_metrics = calculate_performance_metrics(df, mass, wheelbase, temp_profile)
             
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             base = f"{uid}_{ts}"
             csv_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{base}.csv")
             df.to_csv(csv_path, index=False)
             
-            p1, p2, p3, p4, p5, p6, p7 = make_plots(df, perf_metrics, temp_machine, mass, wheelbase,
-                                                     os.path.join(app.config['OUTPUT_FOLDER'], base))
+            temp_params = {'temp_initial': temp_initial, 'temp_avg': temp_avg, 'temp_max': temp_max}
+            
+            plots = make_plots(df, perf_metrics, temp_profile, mass, wheelbase, temp_params,
+                              os.path.join(app.config['OUTPUT_FOLDER'], base))
             
             total_time_min = df['time_s'].max() / 60.0
             total_time_hr = total_time_min / 60.0
@@ -714,33 +1032,42 @@ def simulate_route():
             if target_time_minutes:
                 diff_pct = abs(total_time_min - target_time_minutes) / target_time_minutes * 100
                 if diff_pct > 20:
-                    time_warning = f"⚠️ Actual time ({total_time_min:.1f} min) differs {diff_pct:.0f}% from target ({target_time_minutes:.1f} min)"
+                    time_warning = f"⚠️ Actual time ({total_time_min:.1f} min) differs {diff_pct:.0f}% from target"
+            
+            avg_temp = np.mean(temp_profile)
+            max_temp_actual = np.max(temp_profile)
+            min_temp_actual = np.min(temp_profile)
             
             print(f"\n{'='*70}")
-            print(f"SIMULATION COMPLETE!")
+            print(f"SIMULATION COMPLETE! 12 PLOTS GENERATED")
             print(f"Distance: {perf_metrics['total_distance_km']} km")
             print(f"Time: {total_time_min:.1f} min ({total_time_hr:.2f} hrs)")
             print(f"Avg Speed: {perf_metrics['average_speed_kmh']} km/h")
-            print(f"Max Speed: {perf_metrics['max_speed_kmh']} km/h")
+            print(f"Temperature: Avg={avg_temp:.1f}°C, Max={max_temp_actual:.1f}°C")
             print(f"{'='*70}\n")
             
             return render_template("result.html",
                                    csv_file=url_for('download_file', filename=os.path.basename(csv_path)),
-                                   img1=url_for('download_file', filename=os.path.basename(p1)),
-                                   img2=url_for('download_file', filename=os.path.basename(p2)),
-                                   img3=url_for('download_file', filename=os.path.basename(p3)),
-                                   img4=url_for('download_file', filename=os.path.basename(p4)),
-                                   img5=url_for('download_file', filename=os.path.basename(p5)),
-                                   img6=url_for('download_file', filename=os.path.basename(p6)),
-                                   img7=url_for('download_file', filename=os.path.basename(p7)),
+                                   img1=url_for('download_file', filename=os.path.basename(plots[0])),
+                                   img2=url_for('download_file', filename=os.path.basename(plots[1])),
+                                   img3=url_for('download_file', filename=os.path.basename(plots[2])),
+                                   img4=url_for('download_file', filename=os.path.basename(plots[3])),
+                                   img5=url_for('download_file', filename=os.path.basename(plots[4])),
+                                   img6=url_for('download_file', filename=os.path.basename(plots[5])),
+                                   img7=url_for('download_file', filename=os.path.basename(plots[6])),
+                                   img8=url_for('download_file', filename=os.path.basename(plots[7])),
+                                   img9=url_for('download_file', filename=os.path.basename(plots[8])),
+                                   img10=url_for('download_file', filename=os.path.basename(plots[9])),
+                                   img11=url_for('download_file', filename=os.path.basename(plots[10])),
+                                   img12=url_for('download_file', filename=os.path.basename(plots[11])),
                                    rows=len(df), csv_name=os.path.basename(csv_path),
                                    perf=perf_metrics, total_time_min=round(total_time_min, 2),
                                    total_time_hr=round(total_time_hr, 2), time_warning=time_warning,
+                                   temp_stats={'avg': round(avg_temp, 1), 'max': round(max_temp_actual, 1), 'min': round(min_temp_actual, 1)},
                                    params={
-                                       'max_speed': max_speed, 'min_speed': min_speed,
-                                       'avg_speed': avg_speed, 'traffic_density': traffic_density,
-                                       'target_time_minutes': target_time_minutes if target_time_minutes else 'Not set',
-                                       'mass': mass, 'wheelbase': wheelbase, 'temp_machine': temp_machine
+                                       'max_speed': max_speed, 'min_speed': min_speed, 'avg_speed': avg_speed,
+                                       'traffic_density': traffic_density, 'target_time_minutes': target_time_minutes if target_time_minutes else 'Not set',
+                                       'mass': mass, 'wheelbase': wheelbase, 'temp_initial': temp_initial, 'temp_avg': temp_avg, 'temp_max': temp_max
                                    })
         except Exception as e:
             flash(f"Error: {str(e)}")

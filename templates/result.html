@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulation Results - Pro</title>
+  <title>Simulation Results v4.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -25,8 +25,8 @@
     <!-- Header -->
     <div class="glass-effect rounded-3xl shadow-2xl overflow-hidden mb-8 fade-in">
       <div class="gradient-bg text-white py-10 px-8 text-center">
-        <h1 class="text-4xl md:text-5xl font-black mb-3">✅ Simulasi Berhasil!</h1>
-        <p class="text-lg md:text-xl font-light opacity-90">7 Professional Plots | Speed FIXED | All 8 Components</p>
+        <h1 class="text-4xl md:text-5xl font-black mb-3">✅ Simulasi Berhasil - v4.0!</h1>
+        <p class="text-lg md:text-xl font-light opacity-90">12 Professional Plots | Faster Speed | Smooth Temperature</p>
       </div>
     </div>
 
@@ -39,8 +39,8 @@
     </div>
     {% endif %}
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 fade-in">
+    <!-- Stats Grid (5 cards) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 fade-in">
       <div class="glass-effect rounded-2xl p-6 shadow-xl hover-lift border-2 border-blue-200">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Jarak</span>
@@ -84,6 +84,17 @@
         <div class="text-4xl font-black text-gray-800 mb-1">{{ perf.max_speed_kmh }}</div>
         <div class="text-sm text-gray-500 font-medium">km/h</div>
       </div>
+      
+      <div class="glass-effect rounded-2xl p-6 shadow-xl hover-lift border-2 border-orange-200">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Avg Temp</span>
+          <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+            <span class="text-xl">🌡️</span>
+          </div>
+        </div>
+        <div class="text-4xl font-black text-gray-800 mb-1">{{ temp_stats.avg }}</div>
+        <div class="text-sm text-gray-500 font-medium">°C ({{ temp_stats.min }}~{{ temp_stats.max }})</div>
+      </div>
     </div>
 
     <!-- Info Box -->
@@ -93,30 +104,18 @@
           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
         </svg>
         <div>
-          <h3 class="font-bold text-gray-800 mb-1">Simulation Info</h3>
+          <h3 class="font-bold text-gray-800 mb-1">Simulation Info - v4.0</h3>
           <p class="text-sm text-gray-600">
-            <strong>{{ rows }}</strong> data points (per second precision). 
-            {% if params.target_time_minutes != 'Not set' %}
-            Target: <strong class="text-amber-600">{{ params.target_time_minutes }} min</strong>, 
-            Actual: <strong class="text-green-600">{{ total_time_min }} min</strong>
-            {% endif %}
+            <strong>{{ rows }}</strong> data points (per second). 
+            Temp: <strong class="text-red-600">{{ params.temp_initial }}°C → {{ params.temp_avg }}°C → {{ params.temp_max }}°C</strong> (smooth accumulative)
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Components -->
+    <!-- Components Grid -->
     <div class="glass-effect rounded-2xl p-8 mb-8 shadow-xl fade-in">
-      <div class="flex items-center gap-3 mb-6">
-        <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-        </div>
-        <h2 class="text-3xl font-black text-gray-800">All 8 Components</h2>
-      </div>
-      
+      <h2 class="text-3xl font-black text-gray-800 mb-6">All 8 Components</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-5 border-2 border-red-200">
           <div class="flex items-center gap-3 mb-2">
@@ -126,7 +125,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_rear_tire_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km equiv.</div>
         </div>
-        
         <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border-2 border-blue-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">🛞</span>
@@ -135,7 +133,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_front_tire_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km equiv.</div>
         </div>
-        
         <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border-2 border-orange-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">🔴</span>
@@ -144,7 +141,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_rear_brake_pad_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km equiv.</div>
         </div>
-        
         <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border-2 border-purple-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">🔴</span>
@@ -153,7 +149,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_front_brake_pad_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km equiv.</div>
         </div>
-        
         <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-5 border-2 border-teal-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">⛓️</span>
@@ -162,7 +157,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_chain_or_cvt_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km equiv.</div>
         </div>
-        
         <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-5 border-2 border-amber-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">🛢️</span>
@@ -171,7 +165,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_engine_oil_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km equiv.</div>
         </div>
-        
         <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border-2 border-green-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">🏍️</span>
@@ -180,7 +173,6 @@
           <div class="text-2xl font-black text-gray-800">{{ perf.s_engine_km }}</div>
           <div class="text-xs text-gray-600 font-medium">km</div>
         </div>
-        
         <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border-2 border-gray-200">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">💨</span>
@@ -194,135 +186,156 @@
 
     <!-- Download -->
     <div class="glass-effect rounded-2xl p-8 mb-8 shadow-xl fade-in">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
-        </div>
-        <h2 class="text-3xl font-black text-gray-800">Download Data</h2>
-      </div>
+      <h2 class="text-3xl font-black text-gray-800 mb-4">Download Data</h2>
       <a href="{{ csv_file }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
         </svg>
-        Download CSV Data
+        Download CSV
       </a>
       <span class="ml-3 text-sm text-gray-500 font-medium">{{ csv_name }}</span>
     </div>
 
-    <!-- Plots -->
+    <!-- 12 PLOTS -->
     <div class="space-y-8 fade-in">
       <div class="glass-effect rounded-2xl p-8 shadow-xl">
         <h2 class="text-3xl font-black text-gray-800 mb-6 flex items-center gap-3">
           <span class="text-4xl">📈</span>
-          7 Professional Plots
-          <span class="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full pulse">FIXED!</span>
+          12 Professional Plots
+          <span class="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full pulse">v4.0!</span>
         </h2>
         
         <div class="space-y-6">
-          <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>⚡</span> Plot 1: Speed vs Time (Per Second)
-            </h3>
-            <img src="{{ img1 }}" alt="Speed vs Time" class="w-full rounded-lg shadow-md"/>
-          </div>
           
           <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>⛰️</span> Plot 2: Elevation Profile
-            </h3>
-            <img src="{{ img2 }}" alt="Elevation" class="w-full rounded-lg shadow-md"/>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">⚡ Plot 1: Speed vs Time</h3>
+            <img src="{{ img1 }}" alt="Plot 1" class="w-full rounded-lg shadow-md"/>
           </div>
           
           <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>🏁</span> Plot 3: Speed vs Distance
-            </h3>
-            <img src="{{ img3 }}" alt="Speed vs Distance" class="w-full rounded-lg shadow-md"/>
-          </div>
-          
-          <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-green-300">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>📊</span> Plot 4: ALL 8 Components Comparison
-              <span class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">FIXED!</span>
-            </h3>
-            <img src="{{ img4 }}" alt="All 8 Components" class="w-full rounded-lg shadow-md"/>
-            <p class="mt-3 text-sm text-gray-700 font-medium">
-              ✅ Sekarang menampilkan SEMUA 8 komponen dalam satu chart!
-            </p>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">⛰️ Plot 2: Elevation Profile</h3>
+            <img src="{{ img2 }}" alt="Plot 2" class="w-full rounded-lg shadow-md"/>
           </div>
           
           <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>🔴</span> Plot 5: Brake Distribution
-            </h3>
-            <img src="{{ img5 }}" alt="Brake" class="w-full rounded-lg shadow-md"/>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">🏁 Plot 3: Speed vs Distance</h3>
+            <img src="{{ img3 }}" alt="Plot 3" class="w-full rounded-lg shadow-md"/>
           </div>
           
-          <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-pink-300">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>📍</span> Plot 6: Real-time ALL 8 Components (Per Second)
-              <span class="px-2 py-1 bg-pink-500 text-white text-xs font-bold rounded-full pulse">NEW!</span>
-            </h3>
-            <img src="{{ img6 }}" alt="Real-time 8 Components" class="w-full rounded-lg shadow-md"/>
-            <p class="mt-3 text-sm text-gray-700 font-medium">
-              🆕 Tracking per detik untuk SEMUA 8 komponen dalam 2x4 grid!
-            </p>
+          <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Plot 4: Component Comparison</h3>
+            <img src="{{ img4 }}" alt="Plot 4" class="w-full rounded-lg shadow-md"/>
+          </div>
+          
+          <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">🔴 Plot 5: Brake Distribution</h3>
+            <img src="{{ img5 }}" alt="Plot 5" class="w-full rounded-lg shadow-md"/>
+          </div>
+          
+          <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">📍 Plot 6: Real-time 8 Components</h3>
+            <img src="{{ img6 }}" alt="Plot 6" class="w-full rounded-lg shadow-md"/>
           </div>
           
           <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-orange-300">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>🌡️</span> Plot 7: Temperature & Oil (Per Second)
-              <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full pulse">NEW!</span>
+              <span>🌡️</span> Plot 7: Temperature & Oil (SMOOTH!)
+              <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full pulse">FIXED!</span>
             </h3>
-            <img src="{{ img7 }}" alt="Temperature Oil" class="w-full rounded-lg shadow-md"/>
+            <img src="{{ img7 }}" alt="Plot 7" class="w-full rounded-lg shadow-md"/>
             <p class="mt-3 text-sm text-gray-700 font-medium">
-              🆕 Per-second monitoring suhu mesin dan oil degradation rate!
+              ✨ Accumulative heating! Turun hanya 1-5°C saat idle bentar!
             </p>
           </div>
+          
+          <div class="bg-white rounded-xl p-6 shadow-lg hover-lift">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">📉 Plot 8: All Components Combined</h3>
+            <img src="{{ img8 }}" alt="Plot 8" class="w-full rounded-lg shadow-md"/>
+          </div>
+          
+          <div class="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-red-300">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span>🔴</span> Plot 9: Brake Events vs Elevation
+              <span class="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full pulse">NEW!</span>
+            </h3>
+            <img src="{{ img9 }}" alt="Plot 9" class="w-full rounded-lg shadow-md"/>
+            <p class="mt-3 text-sm text-gray-700 font-medium">
+              🆕 Analisis brake events terhadap elevation gain/loss!
+            </p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-blue-300">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span>📈</span> Plot 10: Speed vs Elevation Overlay
+              <span class="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full pulse">NEW!</span>
+            </h3>
+            <img src="{{ img10 }}" alt="Plot 10" class="w-full rounded-lg shadow-md"/>
+            <p class="mt-3 text-sm text-gray-700 font-medium">
+              🆕 Overlay speed dan elevation untuk lihat korelasi langsung!
+            </p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-green-300">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span>⛰️</span> Plot 11: Component Usage by Elevation Zones
+              <span class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full pulse">NEW!</span>
+            </h3>
+            <img src="{{ img11 }}" alt="Plot 11" class="w-full rounded-lg shadow-md"/>
+            <p class="mt-3 text-sm text-gray-700 font-medium">
+              🆕 Analisis wear component berdasarkan zona elevasi!
+            </p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 shadow-lg hover-lift border-4 border-purple-300">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span>📦</span> Plot 12: Speed Distribution by Elevation Zones
+              <span class="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full pulse">NEW!</span>
+            </h3>
+            <img src="{{ img12 }}" alt="Plot 12" class="w-full rounded-lg shadow-md"/>
+            <p class="mt-3 text-sm text-gray-700 font-medium">
+              🆕 Distribusi speed di tiap zona elevasi - boxplot & bar chart!
+            </p>
+          </div>
+          
         </div>
       </div>
     </div>
 
     <!-- Parameters -->
     <div class="glass-effect rounded-2xl p-8 mt-8 shadow-xl fade-in">
-      <h2 class="text-3xl font-black text-gray-800 mb-6 flex items-center gap-3">
-        <span class="text-4xl">⚙️</span>
-        Simulation Parameters
-      </h2>
+      <h2 class="text-3xl font-black text-gray-800 mb-6">Simulation Parameters</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
           <span class="font-semibold text-gray-700">Max Speed</span>
           <span class="font-bold text-gray-900">{{ params.max_speed }} km/h</span>
         </div>
         <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-          <span class="font-semibold text-gray-700">Min Speed</span>
-          <span class="font-bold text-gray-900">{{ params.min_speed }} km/h</span>
-        </div>
-        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-          <span class="font-semibold text-gray-700">Avg Speed Target</span>
+          <span class="font-semibold text-gray-700">Avg Speed</span>
           <span class="font-bold text-gray-900">{{ params.avg_speed }} km/h</span>
-        </div>
-        <div class="flex justify-between items-center p-4 bg-amber-50 rounded-lg border-2 border-amber-200">
-          <span class="font-semibold text-gray-700">🎯 Target Time</span>
-          <span class="font-bold text-amber-700">{{ params.target_time_minutes }}</span>
         </div>
         <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
           <span class="font-semibold text-gray-700">Traffic</span>
           <span class="font-bold text-gray-900">{{ params.traffic_density|title }}</span>
         </div>
+        <div class="flex justify-between items-center p-4 bg-amber-50 rounded-lg border-2 border-amber-200">
+          <span class="font-semibold text-gray-700">🎯 Target Time</span>
+          <span class="font-bold text-amber-700">{{ params.target_time_minutes }}</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-red-50 rounded-lg border-2 border-red-200">
+          <span class="font-semibold text-gray-700">🌡️ Initial Temp</span>
+          <span class="font-bold text-red-700">{{ params.temp_initial }}°C</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+          <span class="font-semibold text-gray-700">🌡️ Avg Temp</span>
+          <span class="font-bold text-orange-700">{{ params.temp_avg }}°C</span>
+        </div>
+        <div class="flex justify-between items-center p-4 bg-red-50 rounded-lg border-2 border-red-300">
+          <span class="font-semibold text-gray-700">🌡️ Max Temp</span>
+          <span class="font-bold text-red-700">{{ params.temp_max }}°C</span>
+        </div>
         <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
           <span class="font-semibold text-gray-700">Mass</span>
           <span class="font-bold text-gray-900">{{ params.mass }} kg</span>
-        </div>
-        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-          <span class="font-semibold text-gray-700">Wheelbase</span>
-          <span class="font-bold text-gray-900">{{ params.wheelbase }} m</span>
-        </div>
-        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-          <span class="font-semibold text-gray-700">Engine Temp</span>
-          <span class="font-bold text-gray-900">{{ params.temp_machine }} °C</span>
         </div>
       </div>
     </div>
